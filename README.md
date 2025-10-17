@@ -2,8 +2,6 @@
 Team Inspiration's Codebase for the 2025 RoboBoat Competition. We utilize a single ASV (autonomous surface vessel). See [Hardware Prerequisites](#hardware-prerequisites) for a more detailed specification of our current system.
 Before developing ANY code, please read the [format](#format) section thoroughly.
 
-"competition_branch" is the official branch for Barco Polo.
-
 ## Structure
 As of the time of writing (3/8/2025), the repository will utilize the following format in order to organize effectively.
 
