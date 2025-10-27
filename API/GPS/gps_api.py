@@ -167,13 +167,13 @@ class GPS:
     
     def load_heading_offset(self):
         """
-        Load the calculated GPS heading offset from the specified place (API/GPS/config/gps_offset.txt).
+        Load the calculated GPS heading offset from the specified place (API/GPS/Config/gps_offset.txt).
 
         Returns:
             offset (float): The GPS heading offset.
         """
         curr_path = Path("API/GPS")
-        config_path = curr_path / "config"
+        config_path = curr_path / "Config"
         if not config_path.exists():
             os.mkdir(config_path)
         if not (config_path / "gps_offset.txt").exists():
@@ -185,7 +185,7 @@ class GPS:
     def calibrate_heading_offset(self, calib_time : int = 5):
         """
         Averages out the heading data and subtracts it from the most recent heading to generate GPS heading offset.
-        Puts the calcuated offset in the specified place (API/GPS/config/gps_offset.txt).
+        Puts the calcuated offset in the specified place (API/GPS/Config/gps_offset.txt).
 
         Args:
             calib_time (int): Time to receive data from GPS before calculating offset. Defaults to 5 seconds.
@@ -207,7 +207,7 @@ class GPS:
         data = input("Save offset? (y/n): ")
         if data.lower() == "y":
             curr_path = Path("API/GPS")
-            config_path = curr_path / "config"
+            config_path = curr_path / "Config"
             if not config_path.exists():
                 os.mkdir(config_path)
             with open(config_path / "gps_offset.txt", "w") as f:

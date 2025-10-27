@@ -1,6 +1,6 @@
 import cv2
 import time
-from API.Camera.oakd_poe_lr.oakd_api import OAKD_LR
+from API.Camera.oakd_api import OAKD_LR
 from pathlib import Path
 
 MODEL_PATH = str((Path(__file__).parent / Path('../../../../Perception/Models/test_model/yolov8n_coco_640x352.blob')).resolve().absolute())

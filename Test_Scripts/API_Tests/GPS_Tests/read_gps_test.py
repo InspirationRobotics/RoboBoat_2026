@@ -13,16 +13,19 @@ from API.GPS.gps_api import GPS, GPSData
 import time
 
 def log_gps():
-    log = open(f'Test_Scripts/API_Tests/GPS_Tests/GPSLogs/GPSlog_{int(time.time())}.txt', "w")
+    # log = open(f'Test_Scripts/API_Tests/GPS_Tests/GPSLogs/GPSlog_{int(time.time())}.txt', "w")
+    log = open(f'GNC/Guidance_Core/Config/waypoints.txt', "w")
 
     def callback(data : GPSData):
         log.write(str(data) + '\n')
 
     gps = GPS('/dev/ttyUSB0', 115200, callback=callback)
 
+    rate = 2 # Period
+    print(f"Beginning logging process @ one waypoint every {rate} seconds")
     while True:
         try:
-            time.sleep(1)
+            time.sleep(rate)
         except KeyboardInterrupt:
             break
 

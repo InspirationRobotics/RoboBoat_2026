@@ -1,0 +1,31 @@
+CompModel (generalized for NavChannel, FTP, Rescue Deliveries):
+
+green_buoy
+red_buoy
+yellow_buoy
+black_buoy
+black_buoy
+blue_buoy
+cross
+triangle
+green_pylon
+red_pylon
+
+CompetitionSpeedChallenge:
+
+blue_buoy
+yellow_buoy
+black_buoy
+red_buoy
+green_buoy
+tower (will do CV to determine color)
+
+CompetitionDocking (low priority):
+
+dock_circle
+dock_square
+dock_triangle
+cross
+triangle
+
+

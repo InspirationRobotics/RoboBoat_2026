@@ -1,16 +1,24 @@
 {
     "boat": "Barco Polo",
     "mission_plan": "GNC/Guidance_Core/Config/mission_plan.json",
-    "motor_port": "/dev/tty/ACM2",
-    "gps_port": "/dev/tty/USB0",
+    "motor_port": "/dev/ttyACM2",
+    "gps_port": "/dev/ttyUSB0",
 
     "waypoint_generation_method": "hardcode",
-    "waypoint_file": "GNC/Guidance_Core/Config/waypoints.txt",
+    "waypoint_file": "GNC/Guidance_Core/Config/bravo_waypoints_picture.txt",
+    "waypoint_json":"GNC/Guidance_Core/Config/waypoints.json",
+    "waypoint_sequence": "GNC/Guidance_Core/Config/waypoint_sequence.json",
 
     "camera_port": "None",
     "camera_mxid": "None",
     "camera_focal_length": "None",
-    "root_model_path": "Perception/Models",
+    "model_path": "Perception/Models/sign_model/sign_openvino_2022.1_6shave.blob",
+    "model_label_map": [
+        "Black Boat",
+        "Cross",
+        "Orange Boat",
+        "Triangle"
+    ],
 
     "test_model_path" : "Perception/Models/test_model/yolov8n_coco_640x352.blob",
     "test_label_map" :[
@@ -35,10 +43,40 @@
         "Triangle"
     ],
 
+    "competition_model_path" : "Perception/Models/competition_model/competition_openvino_2022.1_6shave.blob",
+    "competition_label_map" : [
+        "black_buoy",
+        "black_circle",
+        "black_cross",
+        "black_triangle",
+        "blue_buoy",
+        "blue_circle",
+        "blue_cross",
+        "blue_racquet_ball",
+        "blue_triangle",
+        "dock",
+        "duck_image",
+        "green_buoy",
+        "green_cross",
+        "green_pole_buoy",
+        "green_triangle",
+        "misc_buoy",
+        "red_buoy",
+        "red_circle",
+        "red_cross",
+        "red_pole_buoy",
+        "red_racquet_ball",
+        "red_square",
+        "rubber_duck",
+        "yellow_buoy",
+        "yellow_racquet_ball"
+    ],
 
     "mini_maestro_port": "/dev/ttyACM1",
     "racquetball_launcher_channel": "0",
     "water_cannon_channel": "1",
     "launch_PWM": "1800",
-    "nominal_PWM": "1500"
+    "nominal_PWM": "1500",
+
+    "FTP_endpoint": [27.373445998456045, -82.45309426603173]
 }

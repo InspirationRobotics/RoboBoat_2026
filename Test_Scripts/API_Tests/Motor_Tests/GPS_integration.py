@@ -4,7 +4,7 @@ import threading
 import csv  # Fix: Import csv module
 from typing import List, Tuple
 from GNC.Control_Core import motor_core
-from GNC.Nav_Core import gis_funcs
+from API.Util import gis_funcs
 
 # Initialize motors
 motor_port = "/dev/ttyACM2"

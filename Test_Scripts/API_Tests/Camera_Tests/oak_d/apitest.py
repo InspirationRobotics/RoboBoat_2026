@@ -1,4 +1,4 @@
-from API.Camera.oakd_poe_lr.oakd_api import OAKD_LR
+from API.Camera.oakd_api import OAKD_LR
 from pathlib import Path
 import cv2
 import time

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import cv2
 import depthai as dai
 
 # Create pipeline
@@ -33,6 +33,7 @@ with dai.Device(pipeline) as device:
         try:
             while True:
                 h265Packet = q.get()  # Blocking call, will wait until a new data has arrived
+                cvFrame = h265Packet.getCvFrame()
                 h265Packet.getData().tofile(videoFile)  # Appends the packet data to the opened file
         except KeyboardInterrupt:
             # Keyboard interrupt (Ctrl + C) detected

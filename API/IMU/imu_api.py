@@ -1,5 +1,5 @@
 """
-NOTE: This code has not yet been reviewed. There is no test script to verify its functionality, as well as the associated hardware setup.
+This code has never been tested (as of 03/08/2025) because the IMU was never mounted on Barco Polo. As such, this module has not been tested.
 """
 
 import time

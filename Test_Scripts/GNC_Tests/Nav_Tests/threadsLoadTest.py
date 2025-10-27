@@ -1,7 +1,7 @@
 """
 This script starts GPS and Camera background thread and put CPU usage and response time into cpu_usage_log.cvs
 """
-from GNC.Nav_Core.info_core import infoCore
+from GNC.info_core import infoCore
 import time
 import psutil
 import csv
@@ -17,11 +17,11 @@ config = MissionHelper().load_json(path="GNC/Guidance_Core/Config/barco_polo.jso
 
 # Define paths to models
 MODEL_1 = config["test_model_path"]
-MODEL_2 = config["sign_model_path"]
+MODEL_2 = config["competition_model_path"]
 
 # Label Map (Ensure it matches your detection classes)
 LABELMAP_1 = config["test_label_map"]
-LABELMAP_2 = config["sign_label_map"]
+LABELMAP_2 = config["competition_label_map"]
 
 # Initialize info Core
 infocore = infoCore(MODEL_2,LABELMAP_2)

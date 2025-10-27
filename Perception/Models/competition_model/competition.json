@@ -1,0 +1,49 @@
+{
+    "model": {
+        "xml": "competition.xml",
+        "bin": "competition.bin"
+    },
+    "nn_config": {
+        "output_format": "detection",
+        "NN_family": "YOLO",
+        "input_size": "640x352",
+        "NN_specific_metadata": {
+            "classes": 25,
+            "coordinates": 4,
+            "anchors": [],
+            "anchor_masks": {},
+            "iou_threshold": 0.5,
+            "confidence_threshold": 0.5
+        }
+    },
+    "mappings": {
+        "labels": [
+            "black_buoy",
+            "black_circle",
+            "black_cross",
+            "black_triangle",
+            "blue_buoy",
+            "blue_circle",
+            "blue_cross",
+            "blue_racquet_ball",
+            "blue_triangle",
+            "dock",
+            "duck_image",
+            "green_buoy",
+            "green_cross",
+            "green_pole_buoy",
+            "green_triangle",
+            "misc_buoy",
+            "red_buoy",
+            "red_circle",
+            "red_cross",
+            "red_pole_buoy",
+            "red_racquet_ball",
+            "red_square",
+            "rubber_duck",
+            "yellow_buoy",
+            "yellow_racquet_ball"
+        ]
+    },
+    "version": 1
+}

@@ -2,7 +2,7 @@ from threading import Thread, Lock
 import numpy as np
 import cv2
 import time
-from API.Camera.oakd_poe_lr.oakd_api import OAKD_LR
+from API.Camera.oakd_api import OAKD_LR
 
 class CameraCore:
     def __init__(self, model_path: str, labelMap: list):

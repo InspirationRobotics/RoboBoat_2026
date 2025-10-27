@@ -1,5 +1,6 @@
 """
 File that defines the class SensorFuse, which handles the creation of a Kalman filter, with inputs integrated between both the GPS and IMU.
+NOTE: This Kalman filter does not work that well because it is linear, meaning that it does not work for 2nd derivative (acceleration) changes.
 """
 
 import time

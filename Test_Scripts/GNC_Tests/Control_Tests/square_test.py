@@ -9,9 +9,9 @@ The test is considered successful if:
 """
 
 import time
-from GNC.Control_Core import motor_core_new
+from GNC.Control_Core import motor_core
 
-motors = motor_core_new.MotorCore("/dev/ttyACM2")
+motors = motor_core.MotorCore("/dev/ttyACM2")
 
 
 while(True):

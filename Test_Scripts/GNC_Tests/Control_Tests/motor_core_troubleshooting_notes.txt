@@ -1,4 +1,0 @@
-bearing() works
-distance calculation works
-vectors add up to 1
-logic of vector only being forward/only being for 1 is accurate
