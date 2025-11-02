@@ -1,0 +1,49 @@
+lidar:
+  lidar_topic: /livox/lidar
+  frame_id: livox_frame
+  msg_type: 1
+
+camera:
+  image_topic: /oak/rgb/image_raw
+  projected_topic: /oak/rgb/projected
+  image_size:
+    width: 768
+    height: 480
+  frame_id: oak_rgb_camera_optical_frame
+
+chessboard:
+  pattern_size:
+    rows: 6
+    columns: 9
+  square_size_meters: 0.45
+
+general:
+  config_folder: /workspace/config
+  data_folder: /workspace/data/
+  correspondence_file: ros2_camera_lidar_fusion_correspondences.txt
+  camera_intrinsic_calibration: camera_intrinsic_calibration.yaml
+  camera_extrinsic_calibration: camera_extrinsic_calibration.yaml
+  slop: 0.1
+  max_file_saved: 40
+  keyboard_listener: True
+  get_intrinsics: True
+  get_extrinsics: True
+
+yolo:
+  cuda_path: /workspace/src/perception/YOLOv8_model/buoy_detection.pt
+  dai_blob_path: /workspace/src/perception/YOLOv8_model/buoy_detection.blob
+  dai_json_path: /workspace/src/perception/YOLOv8_model/buoy_detection.json
+
+fusion:
+  show_lidar_projections: True  # whether or not to draw lidar points on the output image
+  lidar_projections_size: 2  # radius of the lidar points on the image
+  use_oak_pipeline: True  # use ROS subscriber to get camera images
+  show_fusion_result_opencv: False  # use cv2.imshow to show the fusion result
+  yolo_on_cam: False
+  record_video: True  # whether record a video or not
+  video_file_name: test.avi  # name of the video being recorded
+  visualize: False  # whether to visualize the fusion result
+  publish_3d: True
+
+navigation:
+  visualize: False

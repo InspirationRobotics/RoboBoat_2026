@@ -1,8 +1,5 @@
-__pycache__/
-.idea/
-.venv/
-venv/
-
-*.pt
-*.mp4
-*.h265
+build/
+install/
+log/
+__pycache__
+rosbag/

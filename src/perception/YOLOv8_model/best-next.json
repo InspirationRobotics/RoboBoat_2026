@@ -1,0 +1,31 @@
+{
+    "model": {
+        "xml": "best-next.xml",
+        "bin": "best-next.bin"
+    },
+    "nn_config": {
+        "output_format": "detection",
+        "NN_family": "YOLO",
+        "input_size": "416x416",
+        "NN_specific_metadata": {
+            "classes": 7,
+            "coordinates": 4,
+            "anchors": [],
+            "anchor_masks": {},
+            "iou_threshold": 0.5,
+            "confidence_threshold": 0.5
+        }
+    },
+    "mappings": {
+        "labels": [
+            "Class_0",
+            "Class_1",
+            "green buoy",
+            "Class_3",
+            "red buoy",
+            "Class_5",
+            "Class_6"
+        ]
+    },
+    "version": 1
+}
