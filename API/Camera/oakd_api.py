@@ -43,12 +43,6 @@ class OAKD_LR(Node):
         self.imageWidth = 1920
         self.imageHeight = 1200
 
-        # Threading components
-        self.running = False
-        self.lock = threading.Lock()
-
-        self.capture_thread = None
-
         # Publisher for RGB. depth image and bbox
         self.logger = self.get_logger()
         self.bridge = CvBridge()
@@ -143,57 +137,56 @@ class OAKD_LR(Node):
 
     def _captureLoop(self):
         """ Threaded function to continuously grab frames and put them in queue"""
-        while self.running:
-            inRgb = self.qRgb.get().getCvFrame()
-            inDepth = self.qDepth.get().getCvFrame()
-            inDet = self.qDet.get()
 
-            # pubish RGB image frame
-            RGBmsg = self.bridge.cv2_to_imgmsg(inRgb, encoding='bgr8')
-            RGBmsg.header.stamp = self.get_clock().now().to_msg()
-            RGBmsg.header.frame_id = "camera_RGB_frame"
-            self.rgb_pub.publish(RGBmsg)
+        inRgb = self.qRgb.get().getCvFrame()
+        inDepth = self.qDepth.get().getCvFrame()
+        inDet = self.qDet.get()
 
-            # publish Depth image frame
-            Depthmsg = self.bridge.cv2_to_imgmsg(inDepth, encoding="16UC1")  # or "32FC1" --> convert to meters, oakd-LR is in mm
-            Depthmsg.header.stamp = self.get_clock().now().to_msg()
-            Depthmsg.header.frame_id = "camera_depth_frame"
-            self.depth_pub.publish(Depthmsg)
+        # pubish RGB image frame
+        RGBmsg = self.bridge.cv2_to_imgmsg(inRgb, encoding='bgr8')
+        RGBmsg.header.stamp = self.get_clock().now().to_msg()
+        RGBmsg.header.frame_id = "camera_RGB_frame"
+        self.rgb_pub.publish(RGBmsg)
 
-            # publich yolo detection
-            detection_array = Detection2DArray()
-            detection_array.header.stamp = self.get_clock().now().to_msg()
-            for detection in inDet.detections:
-                # Calculate bounding box coordinates
-                bbox = self._frame_norm(inRgb, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
-                
-                # Calculate the center of the bounding box
-                center_x = (bbox[0] + bbox[2]) // 2
-                center_y = (bbox[1] + bbox[3]) // 2
-                
-                # Define a smaller bounding box for depth calculation
-                width = bbox[2] - bbox[0]
-                height = bbox[3] - bbox[1]
+        # publish Depth image frame
+        Depthmsg = self.bridge.cv2_to_imgmsg(inDepth, encoding="16UC1")  # or "32FC1" --> convert to meters, oakd-LR is in mm
+        Depthmsg.header.stamp = self.get_clock().now().to_msg()
+        Depthmsg.header.frame_id = "camera_depth_frame"
+        self.depth_pub.publish(Depthmsg)
 
-                bbox_msg = BoundingBox2D()
-                bbox_msg.center = Pose2D(position=Point2D(x=center_x, y=center_y), theta=0.0)
-                bbox_msg.size_x = width
-                bbox_msg.size_y = height
-
-                hypothesis = ObjectHypothesis()
-                hypothesis.class_id = str(self.labelMap[detection.label])
-                hypothesis.score = detection.confidence
-
-                detection_msg = Detection2D()
-                detection_msg.header = detection_array.header
-                detection_msg.bbox = bbox_msg
-                detection_msg.results.append(ObjectHypothesisWithPose(hypothesis=hypothesis))
-                detection_array.detections.append(detection_msg)
-
-            self.bbox_pub.publish(detection_array)
+        # publich yolo detection
+        detection_array = Detection2DArray()
+        detection_array.header.stamp = self.get_clock().now().to_msg()
+        for detection in inDet.detections:
+            # Calculate bounding box coordinates
+            bbox = self._frame_norm(inRgb, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
             
-            time.sleep(1 / self.FPS)  # Sleep to match frame rate
-    
+            # Calculate the center of the bounding box
+            center_x = (bbox[0] + bbox[2]) // 2
+            center_y = (bbox[1] + bbox[3]) // 2
+            
+            # Define a smaller bounding box for depth calculation
+            width = bbox[2] - bbox[0]
+            height = bbox[3] - bbox[1]
+
+            bbox_msg = BoundingBox2D()
+            bbox_msg.center = Pose2D(position=Point2D(x=center_x, y=center_y), theta=0.0)
+            bbox_msg.size_x = width
+            bbox_msg.size_y = height
+
+            hypothesis = ObjectHypothesis()
+            hypothesis.class_id = str(self.labelMap[detection.label])
+            hypothesis.score = detection.confidence
+
+            detection_msg = Detection2D()
+            detection_msg.header = detection_array.header
+            detection_msg.bbox = bbox_msg
+            detection_msg.results.append(ObjectHypothesisWithPose(hypothesis=hypothesis))
+            detection_array.detections.append(detection_msg)
+
+        self.bbox_pub.publish(detection_array)
+            
+
     def _findCamera(self) -> bool:
         """ Check if a DepthAI device exists """
         try:
@@ -240,17 +233,15 @@ class OAKD_LR(Node):
         self._initQueues()
 
 
-        # Start thread
+
+        # Create a timer to repeatedly call the inference function
         self.running = True
-        self.capture_thread = threading.Thread(target=self._captureLoop, daemon=True)
-        self.capture_thread.start()
+        self.timer = self.create_timer(0.03, self._captureLoop)  # ~30 FPS
         time.sleep(1)  # wait for frame to arrive queue
 
     def stopCapture(self):
         self.logger.info("Shutting down OAKD_LR node...")
-        self.running = False
-        if self.capture_thread:
-            self.capture_thread.join()
+
         if self.device:
             self.device.close()
 
