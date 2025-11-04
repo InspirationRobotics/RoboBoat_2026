@@ -9,9 +9,11 @@ from typing import List, Tuple
 from pathlib import Path
 from serial import Serial
 from threading import Thread, Lock
-
+import rclpy
+from rclpy.node import Node
 # Need to import pynmeagps locally
 from pynmeagps import NMEAReader, NMEAMessage
+from sensor_msgs.msg import NavSatFix
 
 """
 GPS Specifications (Beitan GPS module):
@@ -58,7 +60,7 @@ class GPSData:
     def __repr__(self) -> str:
         return self.__str__()
     
-class GPS:
+class GPS(Node):
     """
     Class to handle all GPS functionalitiy.
 
@@ -71,6 +73,7 @@ class GPS:
     """
 
     def __init__(self, serialport : str = "/dev/ttyUSB0", baudrate : int = 115200, callback = None, threaded : bool = True, *, offset : float = None):
+        super.__init__("GPS")
         stream = Serial(serialport, baudrate, timeout=3)
         self.nmr = NMEAReader(stream)
         self.threaded = threaded
@@ -84,6 +87,8 @@ class GPS:
         self.gps_thread = Thread(target=self.__gps_thread, daemon=True)
         if threaded:
             self.gps_thread.start()
+
+        self.pub = self.create_publisher(NavSatFix,'GPS/pos', 10)  # NOTE the message NavSatFix has 3 attribute, lat, lon, alt, we passed in lat, lon, heading instead. So the alttitude value is the heading.
 
     def __del__(self):
         """
@@ -137,8 +142,12 @@ class GPS:
             raw_data, parsed_data = self.nmr.read() # Blocking
             with self.lock:
                 self.__update_data(parsed_data)
-            if self.callback and self.data.is_valid():
-                self.callback(self.data)
+            if self.data.is_valid():
+                gps_msg = NavSatFix()
+                gps_msg.latitude = self.data.lat
+                gps_msg.longitude = self.data.lat
+                gps_msg.altitude = self.data.heading
+                self.pub(gps_msg)
 
     def __get_single_data(self) -> GPSData:
         """

@@ -1,15 +1,17 @@
+import rclpy
+from rclpy.node import Node
+from rclpy.clock import Clock
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesis, ObjectHypothesisWithPose, BoundingBox2D, Point2D, Pose2D
+
 import cv2
 import numpy as np
 import depthai as dai
 import threading
-import queue
 import time
-"""
-Note from creator:
-I think I overcomplicates things
-self.frame_queue for frames may not be necessary
-"""
-class OAKD_LR:
+
+class OAKD_LR(Node):
     def __init__(self, model_path: str, labelMap: list):
         """
         Arguments: 
@@ -17,6 +19,7 @@ class OAKD_LR:
             labelMap    :list -> A list of classes, can be found from json file in Model folder
 
         """
+        super().__init__('OAKD_LR')
         # config for stereo camera
         self.FPS = 20
         self.extended_disparity = True
@@ -42,11 +45,16 @@ class OAKD_LR:
 
         # Threading components
         self.running = False
-        self.frame_queue = queue.Queue(maxsize=4)
-        self.det_queue = queue.Queue(maxsize=4)
         self.lock = threading.Lock()
 
         self.capture_thread = None
+
+        # Publisher for RGB. depth image and bbox
+        self.logger = self.get_logger()
+        self.bridge = CvBridge()
+        self.rgb_pub = self.create_publisher(Image,'oakd/rgb', 10)
+        self.depth_pub = self.create_publisher(Image,'oakd/depth', 10)
+        self.bbox_pub = self.create_publisher(Detection2DArray,'/oak/bbox',10)
 
     def _initPipeline(self):
         self.pipeline = dai.Pipeline()
@@ -136,26 +144,56 @@ class OAKD_LR:
     def _captureLoop(self):
         """ Threaded function to continuously grab frames and put them in queue"""
         while self.running:
-            inRgb = self.qRgb.get()
-            inDepth = self.qDepth.get()
+            inRgb = self.qRgb.get().getCvFrame()
+            inDepth = self.qDepth.get().getCvFrame()
             inDet = self.qDet.get()
 
-            if inRgb and inDepth:
-                frame = (inRgb.getCvFrame(), inDepth.getCvFrame())
+            # pubish RGB image frame
+            RGBmsg = self.bridge.cv2_to_imgmsg(inRgb, encoding='bgr8')
+            RGBmsg.header.stamp = self.get_clock().now().to_msg()
+            RGBmsg.header.frame_id = "camera_RGB_frame"
+            self.rgb_pub.publish(RGBmsg)
 
-                # Store the latest frame safely
-                with self.lock:
-                    if self.frame_queue.full():
-                        self.frame_queue.get()
-                    self.frame_queue.put(frame)
+            # publish Depth image frame
+            Depthmsg = self.bridge.cv2_to_imgmsg(inDepth, encoding="16UC1")  # or "32FC1" --> convert to meters, oakd-LR is in mm
+            Depthmsg.header.stamp = self.get_clock().now().to_msg()
+            Depthmsg.header.frame_id = "camera_depth_frame"
+            self.depth_pub.publish(Depthmsg)
 
-            if inDet:
-                with self.lock:
-                    if self.det_queue.full():
-                        self.det_queue.get()
-                    self.det_queue.put(inDet.detections)
+            # publich yolo detection
+            detection_array = Detection2DArray()
+            detection_array.header.stamp = self.get_clock().now().to_msg()
+            for detection in inDet.detections:
+                # Calculate bounding box coordinates
+                bbox = self._frame_norm(inRgb, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
+                
+                # Calculate the center of the bounding box
+                center_x = (bbox[0] + bbox[2]) // 2
+                center_y = (bbox[1] + bbox[3]) // 2
+                
+                # Define a smaller bounding box for depth calculation
+                width = bbox[2] - bbox[0]
+                height = bbox[3] - bbox[1]
 
+                bbox_msg = BoundingBox2D()
+                bbox_msg.center = Pose2D(position=Point2D(x=center_x, y=center_y), theta=0.0)
+                bbox_msg.size_x = width
+                bbox_msg.size_y = height
+
+                hypothesis = ObjectHypothesis()
+                hypothesis.class_id = str(self.labelMap[detection.label])
+                hypothesis.score = detection.confidence
+
+                detection_msg = Detection2D()
+                detection_msg.header = detection_array.header
+                detection_msg.bbox = bbox_msg
+                detection_msg.results.append(ObjectHypothesisWithPose(hypothesis=hypothesis))
+                detection_array.detections.append(detection_msg)
+
+            self.bbox_pub.publish(detection_array)
+            
             time.sleep(1 / self.FPS)  # Sleep to match frame rate
+    
     def _findCamera(self) -> bool:
         """ Check if a DepthAI device exists """
         try:
@@ -176,6 +214,15 @@ class OAKD_LR:
             print(f"[ERROR] Failed to find DepthAI camera: {e}")
             return False
 
+    def _frame_norm(self, frame, bbox):
+        """Convert bbox from percentage to pixels base on frame size"""
+        try:
+            norm_vals = np.full(len(bbox), frame.shape[0])
+            norm_vals[::2] = frame.shape[1]
+            return (np.clip(np.array(bbox), 0, 1) * norm_vals).astype(int)
+        except Exception as e:
+            print("[ERROR] Normoalize bbox Error: {e}")
+
     def startCapture(self):
         if not self.device:
             print("[ERROR] Device is not running!")
@@ -192,6 +239,7 @@ class OAKD_LR:
         print("[DEBUG] Pipeline initialized.")
         self._initQueues()
 
+
         # Start thread
         self.running = True
         self.capture_thread = threading.Thread(target=self._captureLoop, daemon=True)
@@ -199,24 +247,26 @@ class OAKD_LR:
         time.sleep(1)  # wait for frame to arrive queue
 
     def stopCapture(self):
+        self.logger.info("Shutting down OAKD_LR node...")
         self.running = False
         if self.capture_thread:
             self.capture_thread.join()
         if self.device:
             self.device.close()
 
-    def getLatestBuffers(self):
-        with self.lock:
-            if not self.frame_queue.empty():
-                return self.frame_queue.queue[-1]  # Get latest frame
-            else:
-                print("[ERROR] Queue empty")
-        return None
+        # destroy ros2 publishers
+        self.rgb_pub.destroy()
+        self.depth_pub.destroy()
+        self.bbox_pub.destroy()
 
-    def getLatestDetection(self):
-        with self.lock:
-            if not self.det_queue.empty():
-                return self.det_queue.queue[-1]  # Get latest detection
-            else:
-                print("[ERROR] Queue empty")
-        return None
+        self.logger.info("OAKD_LR node shutdown complete.")
+
+if __name__=="__main__":
+    from API.Util.get_labelMap import load_label_map
+
+    rclpy.init()
+    node = OAKD_LR(model_path="API/Camera/Models/competition_model/competition_openvino_2022.1_6shave.blob", labelMap=load_label_map("API/Camera/Models/competition_model/competition.json"))
+    rclpy.spin(node)
+    node.stopCapture()
+    node.destroy_node()
+    rclpy.shutdown()
